@@ -1,27 +1,637 @@
 ---
-title: "Project Title"
-author: "Team Name"
-date: "01/10/2021"
+title: "Presentation of Project of GDM"
+subtitle: "Analysis of Stock Market Data of Vaccine Companies in COVID19 Pandemic"
+author: "Gizem Miçooğulları, Yasin Doğa Özkütük, Mert Taşdemir"
+date: "`r Sys.Date()`"
 output:
-  pdf_document: default
-  html_document: default
+  beamer_presentation:
+    theme: "AnnArbor"
+    colortheme: "dolphin"
 ---
 
-Oral presentation should be prepared in `R Markdown` and should be **25-minutes long followed by a 5-minutes long Q-A** session. Oral presentation should be presented evenly and sequentially by each member of the team. Oral presentation should present appropriate details on the following topics (please note that other than Title, Introduction and Conclusion slides, order does not need to necessarily be in the order seen below):
-
-*	Title Slide
-*	Title of project
-*	Team member names
-*	Introduction to Presentation
-  *	Project Goal & Societal Benefits
-  *	Introduction of data & problem statement
-  *	Actions taken (data preparation & visualization, data science packages used, codes etc) 
-  *	Challenges, if any
-  *	Conclusion
-  *	References
-
-Project oral presentation should be prepared collaboratively. The oral presentation will be evaluated according to the evaluation form available in this repo. Finally commit and push all the required files (including `.Rmd` files) just before
-your oral presentation (January 29, 2022 or January 30, 2022) via [GitHub Classroom of MAT381E organization](https://github.com/MAT381E).
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
 
 
+# Introduction  {.allowframebreaks}  
 
+On 31 December 2019, WHO was informed of cases of pneumonia of unknown cause in Wuhan City, China. A novel corona virus was identified as the cause by Chinese authorities on 7 January 2020 and was temporarily named *2019-nCoV*. Whenever virus spread to the other countries, it has named *COVID19* and WHO announced this disease as global pandemic in March 11, 2020. This pandemic has become worst disease since the Spanish Flu.  
+\framebreak As expected, almost each part of industry has affected negatively. Especially in stock prices of transportation and food services significant decrease can be observed. For instance, while Lufthansa Airlines has stock price $16.41$ in December 1, 2019 this value became $8.16$ in April 1, 2020.  
+\framebreak To summarize, 2020 became an unlucky year for many sector. However, last days of December 2020 some health companies such as Moderna Inc., BioNTech and AstraZeneca(University of Oxford) announced their success in development of COVID19 vaccine. Henceforth in 2021 both society and global economy took a sigh of relief.  
+\framebreak Based on affects of pandemic in stock markets, we encouraged to make this project. In this project, statistical analysis and comparison between stock price data of three vaccine company Moderna Inc., Pfizer& BioNTech and AstraZeneca by splitting data into critical dates such as authorization date in a region or starting dates of phase 1,2,3 for those companies will be performed.  
+\framebreak It is planned to take the data from a time interval from January 1, 2020 to October 1, 2021. Additionally, some data visualization techniques will be used during this project in order to provide a clear explanation of our work. Statistical analyses are also added.  
+\framebreak Main goal of this project is analysis of successes in terms of increasing their stock price values of certain vaccine companies during COVID19.
+
+
+## Data
+
+[Yahoo Finance](https://finance.yahoo.com/), which is one of the well-known finance data providers will be source of data sets of the project. As explained, three vaccine companies will be considered in whole analysis and comparisons. Reader could be curious about the why only BioNTech will be included while Pfizer excluded. The main reason is to prevent confusions. It is obvious that stock prizes of Pfizer and BioNTech are positively correlated. The data sets has taken as csv files and converted to the regular xlsx files. Each data set has been taken from NasdaqGS in terms of USD currency.
+
+# Libraries {.allowframebreaks} 
+
+
+
+We used libraries knitr, tidyverse and readxl in taking raw data sets, reshaping them, and visualize them. Specifically, we used ggridges for distribution graphs, plotly for interactive charts and cowplot for merging two charts.
+
+\framebreak 
+
+# Codes and Graphs {.allowframebreaks}
+
+\tiny
+
+```{r,echo=T,message=F}
+library(rmarkdown)
+library(readxl)
+library(tidyverse)
+library(knitr)
+library(ggridges)
+library(plotly)
+library(cowplot)
+```
+
+\framebreak
+
+# BioNTech {.allowframebreaks}
+
+\normalsize
+[BioNTech](https://biontech.de/) ( short for Biopharmaceutical New Technologies) is a German biotechnology company based in Mainz that develops and manufactures active immunotherapies for patient-specific approaches to the treatment of diseases. Among the society, this company known for developing mRNA type vaccine for COVID19. The stock data of BioNTech that project aims to consider is closing values of stock prices of days in range January 1,2020 and October 1, 2021. The data set imported from [Yahoo Finance](https://finance.yahoo.com/quote/BNTX/history?p=BNTX) and it has cleaned from unwanted data. 
+
+
+\tiny
+```{r,echo=T,message=F}
+biontechdata=read_excel("biontech.xlsx")
+biontechdata= biontechdata %>% select(Date | Close)
+```
+\normalsize
+\framebreak Critical dates are listed below, these dates has been taken from news websites.
+
+
+\tiny
+```{r,echo=T, message=F}
+cridateseventsbiontech=read_excel("criticaldatesbiontech.xlsx")
+cridateseventsbiontech %>% 
+  filter(Date==cridateseventsbiontech$Date[2] |Date==cridateseventsbiontech$Date[3] | 
+           Date==cridateseventsbiontech$Date[6] |Date==cridateseventsbiontech$Date[7]) %>% 
+  kable()
+```
+\normalsize
+
+\framebreak The following graph illustrates closed prices of stock data of BioNTech in time interval, moreover critical dates can be seen in red points.
+
+
+\tiny
+```{r,echo=T, message=F,out.width = '85%'}
+biontechdata$Date <- as.Date(biontechdata$Date)
+newcridates=as.Date(c("2020-05-05","2020-07-27","2020-12-21","2021-08-23"))
+biontechdata=biontechdata %>% 
+  mutate(date_type=case_when(biontechdata$Date 
+                             %in% newcridates ~ "Critical", TRUE ~ "Not Critical"))
+highlight=biontechdata %>% 
+  filter(date_type=="Critical")
+closevalue=ggplot(biontechdata, aes(x = Date, y = Close))+
+  geom_point()+
+  geom_point(data=highlight,aes(x = Date, y = Close,color=date_type))+
+  labs(x = "Date", y="Close Price Value($)",
+       title= "Close Price Value of BioNTech stocks between 2020-01-01 and 2021-10-01")+
+  scale_color_manual(values = c("Critical" = "red",
+                                "Not Critical" = "black"))
+closevalue= closevalue+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+closevalue
+```
+\normalsize
+
+\framebreak The following bar chart contains mean of the stock close price data at each section.
+\tiny
+```{r,echo=T, message=F,out.width= '75%'}
+biontechdata = biontechdata %>% 
+  mutate(Period=case_when(Date <= "2020-05-05" ~ 1,
+                           Date > "2020-05-05" & Date <= "2020-07-27" ~ 2,
+                           Date > "2020-07-27" & Date <= "2021-08-23" ~ 3,
+                           Date > "2021-08-23" ~ 4 ))
+avg=biontechdata %>% 
+  group_by(Period) %>% 
+  summarise(Average=mean(Close))
+ggplot(avg,aes(x= Average,y=factor(Period)))+
+  geom_col(fill="lightblue")+
+  scale_y_discrete(labels=c("First","Second","Third","Fourth"))+
+  labs(x = "Average Close Price Value($)",
+       y="Period",
+       title= "Average Close Price Value of BioNTech Stocks Among Periods")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+\framebreak To prepare our data set into statistical tests, we need to determine the amount of its closeness to the normal distribution. We can measure this by quantile-quantile plot of each period. 
+\tiny
+```{r,echo=T,message=FALSE,out.width='75%'}
+ggplot(biontechdata,aes(sample=Close))+
+  stat_qq(color="blue")+
+  stat_qq_line(color="red")+
+  facet_wrap(~Period)+
+  labs(x = " ", y=" ",
+       title= "Quantile-Quantile Plot of Each Period")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+\framebreak Following chart shows distribution and 95% confidence intervals for mean of each period.  
+\tiny
+```{r,message=F, out.width='75%'}
+ggplot(biontechdata, aes(x= Close, y= factor(Period), fill=factor(stat(quantile))))+
+  stat_density_ridges(geom="density_ridges_gradient",
+                                                                                                   
+                            calc_ecdf=T, quantiles
+                      =c(0.025,0.975))+ylab("Period")+
+  scale_fill_manual(name="Probability",
+                    values=c("pink","lightblue","green"),
+                    labels=c("(0,0.025)","(0.025,0.975)","(0.975,1)"))+
+  theme_minimal()
+```
+\normalsize
+
+\framebreak The following plot indicates the variances of each period.
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+variance=biontechdata %>% 
+  group_by(Period) %>% 
+  summarise(Variance=var(Close))
+ggplot(variance,aes(x=Variance,y=factor(Period)))+
+  geom_col(fill="green")+
+  scale_y_discrete(labels=c("First","Second","Third","Fourth"))+
+  labs(x = "Variance of Period", 
+       y="Period",
+       title= "Variance of Close Price Value of BioNTech Stocks Among Periods")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+
+# Moderna Inc. {.allowframebreaks}
+
+[Moderna Inc.](https://www.Moderna Inc.tx.com/) (Moderna Inc. Covid-19 vaccine producer) Moderna Inc., Inc. operates as a clinical stage biotechnology company. The Company focuses on the discovery and development of messenger RNA therapeutics and vaccines. Moderna Inc. Inc. which is based in Cambridge, Massachusetts, develops mRNA medicines for infectious, immuno-oncology, and cardiovascular diseases. Among the society, this company known for developing mRNA type vaccine for COVID19. The stock data of Moderna Inc. Inc. that project aims to consider the closing values of stock prices of days in range January 1,2020 and October 1, 2021. The Moderna Inc. Inc stock values have been imported from [Yahoo Finance](https://finance.yahoo.com/quote/MRNA?p=MRNA&.tsrc=fin-srch) and the unnecessary data have been cleaned from the data and the charts.
+
+\tiny
+```{r,echo=T,message=F}
+ModernaData = read_excel("Moderna.xlsx")
+ModernaData = ModernaData %>% select(Date | Close)
+```
+\normalsize
+
+\framebreak The news that have had high impact on stock prices, have been marked(These dates were found in internet news such as NYTimes, Bloomberg etc.).
+
+\tiny
+```{r,echo=T, message=F}
+criticalDatesModerna = read_excel("criticalDateModerna.xlsx")
+criticalDatesModerna %>% 
+  filter(Date == criticalDatesModerna$Date[1] | 
+           Date == criticalDatesModerna$Date[2] | Date== criticalDatesModerna$Date[3] | 
+           Date == criticalDatesModerna$Date[4] | 
+           Date == criticalDatesModerna$Date[5]) %>% 
+  kable()
+```
+\normalsize
+
+\framebreak The following graph illustrates closing prices of  "Moderna Inc. Inc" in time interval, where critical dates can be seen in red points.\vspace{1 cm}
+
+\tiny
+```{r,echo=T, message=F,out.width = '85%'}
+ModernaData$Date <- as.Date(ModernaData$Date)
+newCriticalDates=as.Date(c("2020-03-16","2020-07-27",
+                           "2020-12-02","2020-12-18", 
+                           "2021-01-06"))
+ModernaData=ModernaData %>% 
+  mutate(dateType=case_when(ModernaData$Date %in% 
+                              newCriticalDates ~ "Critical", 
+                            TRUE ~ "Not Critical"))
+highLight=ModernaData %>% 
+  filter(dateType=="Critical")
+closeValue=ggplot(ModernaData, aes(x = Date, y = Close))+
+  geom_point()+
+  geom_point(data=highLight,aes(x = Date, y = Close,color=dateType))+
+  labs(x = "Date", y="Close Price Value($)",
+       title= "Close Price Value of Moderna Inc. 
+       stocks between 2020-01-01 and 2021-10-01")+
+  scale_color_manual(values = c("Critical" = "red", 
+                                "Not Critical" = "black"))
+closevalue=closeValue+theme_minimal()+
+theme(legend.position = "bottom")
+closevalue
+```
+\normalsize
+
+\framebreak The following bar chart contains mean of the stock close price data at each section.
+\tiny
+```{r,echo=T, message=F,out.width= '75%'}
+ModernaData = ModernaData %>% 
+  mutate(Period=case_when(Date <= "2020-03-16" ~ 1,
+                           Date > "2020-03-16" & Date <= "2020-07-27" ~ 2, 
+                           Date > "2020-07-27" & Date <= "2020-12-02" ~ 3, 
+                           Date > "2020-12-02" & Date <= "2020-12-18" ~ 4, 
+                           Date > "2020-12-18" & Date <= "2021-01-06" ~ 5, 
+                           Date > "2021-01-06" & Date <= "2021-12-18" ~ 6))
+average=ModernaData %>% 
+  group_by(Period) %>% 
+  summarise(Average=mean(Close))
+ggplot(average,aes(x= Average,y=factor(Period)))+
+  geom_col(fill="lightblue")+
+  scale_y_discrete(labels=c("First","Second","Third",
+                            "Fourth", "Five", "Six"))+
+  labs(x = "Average Close Price Value", 
+       y="Period",
+       title= "Average Close Price Value of Moderna Inc. Stocks Among Periods")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+\framebreak To prepare our dataset into statistical tests, we will be  determining the amount of its closeness to the normal distribution. 
+\tiny
+```{r,echo=T,message=FALSE,out.width='75%'}
+ggplot(ModernaData,aes(sample=Close))+
+  stat_qq(color="blue")+
+  stat_qq_line(color="red")+
+  facet_wrap(~Period)+
+  labs(x = " ", y=" ",title= "Quantile-Quantile 
+       Plot of Each Period")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+\framebreak The normality of periods can be observed from following density plot better. Moreover, this plot shows $95%$ confidence intervals of each period.
+\tiny
+```{r,message=F, out.width='75%'}
+ggplot(ModernaData, aes(x= Close, y= factor(Period),
+                        fill=factor(stat(quantile))))+
+  stat_density_ridges(geom="density_ridges_gradient",
+                                                                                                         
+                       calc_ecdf=T, quantiles = c(0.025,0.975))+
+  ylab("Period")+
+  scale_fill_manual(name="Probability",
+                    values=c("pink","lightblue","green"),
+                    labels=c("(0,0.025)","(0.025,0.975)","(0.975,1)"))+
+  theme_minimal()
+```
+\normalsize
+
+\framebreak The following bar chart indicates variances of each period.
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+varians=ModernaData %>% 
+  group_by(Period) %>% 
+  summarise(Variance=var(Close))
+ggplot(varians,aes(x=Variance,y=factor(Period)))+
+  geom_col(fill="green")+
+  scale_y_discrete(labels=c("First","Second","Third",
+                            "Fourth", "Five", "Six"))+
+  labs(x = "Variance of Periods", y="Period",
+       title= "Variance of Close Price Value of 
+       Moderna Inc. Stocks Among Periods")+
+  theme_minimal()+
+  theme(legend.position = "bottom")
+```
+\normalsize
+
+# AstraZeneca {.allowframebreaks}
+
+AstraZeneca plc is a British-Swedish multinational pharmaceutical and biotechnology company with its headquarters at the Cambridge Biomedical Campus in Cambridge, England. It has a portfolio of products for major diseases in areas including oncology, cardiovascular, gastrointestinal, infection, neuroscience, respiratory, and inflammation. It has been involved in developing the Oxford-AstraZeneca COVID-19 vaccine.  The company was founded in 1999 through the merger of the Swedish Astra AB and the British Zeneca Group. Since the merger it has been among the world's largest pharmaceutical companies and has made numerous corporate acquisitions, including Cambridge Antibody Technology (in 2006), MedImmune (in 2007), Spirogen (in 2013) and Definiens (by MedImmune in 2014).    AstraZeneca has a primary listing on the London Stock Exchange and is a constituent of the FTSE 100 Index.  
+
+\framebreak It has secondary listings on Nasdaq OMX Stockholm, Nasdaq New York, the Bombay Stock Exchange and on the National Stock Exchange of India.The stock price of AstraZeneca was imported from Yahoo Finance and cleaned from unnecessary and untidy data. 
+\tiny
+```{r,echo=T,message=F}
+  astrazenecadata=read_excel("astrazeneca.xlsx")
+  astrazenecadata=astrazenecadata %>% select(Date | Close)
+```
+\normalsize
+
+\framebreak The critical dates have been chosen according to the news about AstraZeneca and listed below.
+\tiny
+```{r,echo=T, message=F}
+  datesAstrazeneca=as.Date(c("2020-04-23","2020-05-22","2020-08-31",
+                     "2020-12-3020","21-01-29","2021-03-25","2021-04-07"))
+eventsAstrazeneca=c("First  volunteer given vaccine",
+                    "Phase 2","US phase 3 trial begins","Authorized in Uk",
+                    "Authorized in EU",
+                    "Reuses data after US",
+                    "EMA funds possible casval link between vaccine 
+and rare clotting events")
+cridatesAstraZeneca=tibble(datesAstrazeneca,eventsAstrazeneca)
+cridatesAstraZeneca %>% rename("Date"=datesAstrazeneca ,
+                               "Event"=eventsAstrazeneca) %>% 
+  kable()
+```
+\framebreak
+
+```{r,echo=T, message=F,out.width = '85%'}
+astrazenecadata$Date <- as.Date(astrazenecadata$Date)
+newCriticalDates=as.Date(c("2020-04-23","2020-05-22",
+                           "2020-08-31","2020-12-30", 
+                           "2021-01-29" , "2021-03-25", "2021-04-07"))
+astrazenecadata=astrazenecadata %>%
+  mutate(datetype=case_when(astrazenecadata$Date %in%                                                                   
+                              newCriticalDates ~ "Critical", 
+                               TRUE ~ "Not Critical"))
+ highLight=astrazenecadata %>% 
+     filter(datetype=="Critical")
+ closeValue=ggplot(astrazenecadata, 
+                   aes(x = Date, y = Close))+
+     geom_point()+
+     geom_point(data=highLight,
+                aes(x = Date, y = Close,color=datetype))+
+     labs(x = "Date", 
+          y="Close Price Value($)",
+          title= "Close Price of Astrazeneca in NasdaqGS 
+        Between 2020-01-01 and 2021-10-01")+
+     scale_color_manual(values = c("Critical" = "red", 
+                                   "Not Critical" = "black"))
+ closeValue=closeValue+theme_minimal()+
+   theme(legend.position = "bottom")
+ closeValue
+```
+
+\framebreak The following bar chart contains information about means of periods separately.
+
+\tiny
+```{r,echo=T, message=F,out.width= '75%'}
+ astrazenecadata = astrazenecadata %>% 
+     mutate(Section=case_when(Date <= "2020-04-23" ~ 1,
+                              Date > "2020-04-23" & Date <= "2020-05-22" ~ 2, 
+                              Date > "2020-05-22" & Date <= "2020-08-31" ~ 3, 
+                              Date > "2020-08-31" & Date <= "2020-12-30" ~ 4, 
+                              Date > "2020-12-30" & Date <= "2021-01-29" ~ 5, 
+                              Date > "2021-01-29" & Date <= "2021-03-25" ~ 6,
+                              Date > "2021-03-25" ~ 7))
+average=astrazenecadata %>% 
+     group_by(Section) %>% 
+     summarise(Average=mean(Close))
+ggplot(average,aes(x= Average,y=factor(Section)))+
+     geom_col(fill="lightblue")+
+     scale_y_discrete(labels=c("First","Second","Third",
+                               "Fourth", "Five", "Six", "Seven"))+
+     labs(x = "Average Day-Close Price Value", 
+          y="Section",
+          title= "Average Day-Close Price Value of Astrazeneca Stocks Among Sections")+
+     theme_minimal()+
+     theme(legend.position = "bottom")
+```
+
+\normalsize
+
+\framebreak The following quantile-quantile plot measures their closeness to a normal distribution.
+\tiny
+```{r,echo=T,message=FALSE,out.width='75%'}
+ggplot(astrazenecadata,aes(sample=Close))+
+     stat_qq(color="blue")+
+     stat_qq_line(color="red")+
+     facet_wrap(~Section)+
+     labs(x = " ", y=" ",title= "Quantile-Quantile 
+        Plot of Each Section")+
+     theme_minimal()+
+     theme(legend.position = "bottom")
+```
+\normalsize
+
+\framebreak  The following box plot gives more information about distribution of each period. 
+
+\tiny
+
+```{r,echo=T, message=F,out.width='75%'}
+ggplot(astrazenecadata, aes(x=Close ,y=factor(Section)))+
+     geom_boxplot(fill="yellow")+
+     scale_y_discrete(labels=c("First","Second",
+                               "Third","Fourth", "Five",
+                               "Six", "Seven"))+
+     labs(x = "Close Values", y="Section",
+          title= "Distribution of Close Values by Section")+
+     theme_minimal()+
+     theme(legend.position = "bottom")
+```
+
+\normalsize
+\framebreak The following bar chart compares variances of each period.
+
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+ varians=astrazenecadata %>% 
+     group_by(Section) %>% 
+     summarise(Variance=var(Close))
+ggplot(varians,aes(x=Variance,y=factor(Section)))+
+     geom_col(fill="green")+
+     scale_y_discrete(labels=c("First","Second","Third",
+                               "Fourth", "Five", "Six", "Seven"))+
+     labs(x = "Variance of Section", y="Section",
+          title= "Variance of Day-Close Price Value of 
+        Astrazeneca Stocks Among Sections")+
+     theme_minimal()+
+     theme(legend.position = "bottom")
+```
+
+\normalsize
+
+# Comparison of Vaccine Companies {.allowframebreaks}
+
+In this section, we combine our foundings and make statistical analyses with them. Results will be visualized. First of all it is essential to visualize all raw data from each vaccine company in same graph. To create such a graph, we merged our data sets for vaccine companies as mergedata.xlsx.
+\framebreak\tiny
+```{r,echo=T,message=F,out.width='75%'}
+merged_data=read_excel("mergedata.xlsx")
+merged_data$Date=as.Date(merged_data$Date)
+companies=c("Moderna Inc.","BioNTech","AstraZeneca")
+p=ggplot(merged_data,aes(x=Date, y))+ 
+  geom_point(aes(x=Date,                              
+                 y=ModernaClose,color=companies[1]))+
+  geom_point(aes(x=Date,
+                 y=AstrazenecaClose,colour=companies[3]))+
+  geom_point(aes(x=Date,
+                 y=BiontechClose,colour=companies[2]))+
+  labs(title = "Close Price Values of BioNTech, Moderna Inc. and AstraZeneca",
+       x="Date",y="Close Price Value($)",
+       colour=" Companies")+
+  scale_color_manual(values =c("BioNTech" = "blue",
+                               "Moderna Inc." = "salmon", "AstraZeneca"="orange"))+
+  theme_minimal()
+p
+```
+\normalsize
+\framebreak  As we partitioned the data sets into periods, now we compare similar periods of each company.  We make comparisons with three three main events, these are the period of first volunteer gets vaccine, period of phases 2-3, and period of authorizations. Additionally, we compare the effects of FDA approval on BioNTech's stock prices and EMA founding on AstraZeneca's stock prices. We need to arrange periods for those comparisons.
+ \tiny
+```{r,echo=T,message=F,out.width='75%'}
+biontech_first_volunteer=biontechdata  %>% filter(Period==1) %>% mutate(company="BioNTech")
+moderna_first_volunteer=ModernaData %>% filter(Period==1) %>% mutate(company="Moderna Inc.")
+astrazeneca_first_volunteer= astrazenecadata %>% filter(Section==1) %>% mutate(company="AstraZeneca")
+biontech_phase=biontechdata  %>% filter(Period==2) %>% mutate(company="BioNTech")
+moderna_phase=ModernaData  %>% filter(Period==2) %>% mutate(company="Moderna Inc.")
+astrazeneca_phase= astrazenecadata %>% filter(Section==2 | Section==3) %>% mutate(company="AstraZeneca")
+biontech_authorization=biontechdata %>% filter(Period==3) %>% mutate(company="BioNTech")
+moderna_authorization=ModernaData %>% filter(Period==3 | Period==4 | Period==5) %>% 
+  mutate(company="Moderna Inc.")
+astrazeneca_authorization= astrazenecadata %>% filter(Section==4 | Section==4) %>% 
+  mutate(company="AstraZeneca")
+biontech_FDA=biontechdata %>% filter(Period==4) %>% mutate(company="BioNTech")
+astrazeneca_EMA=astrazenecadata %>% filter(Section==7)
+
+
+```
+\normalsize
+\framebreak  
+The following graphs includes $%95$ confidence intervals for mean of periods of each company. First the following distribution graph compares the distribution of period "first volunteer gets vaccine" of each company.
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+firstvolunteer=data.frame(a=biontech_first_volunteer$Close %>% 
+                            append(moderna_first_volunteer$Close) %>%
+                            append(astrazeneca_first_volunteer$Close),
+                          b=biontech_first_volunteer$company %>%
+                            append(moderna_first_volunteer$company) %>%
+                            append(astrazeneca_first_volunteer$company))
+ggplot(firstvolunteer, aes(x= a, y= factor(b),
+                        fill=factor(stat(quantile))))+
+  stat_density_ridges(geom="density_ridges_gradient",
+                      calc_ecdf=T, quantiles = c(0.025,0.975))+
+  ylab("Companies")+xlab("Close Price Value")+
+  scale_fill_manual(name="Probability",
+                    values=c("pink","lightblue","green"),
+                    labels=c("(0,0.025)","(0.025,0.975)","(0.975,1)"))+
+  theme_minimal()
+
+
+```
+\normalsize
+
+\framebreak
+The following chart indicates the distributions of each company in "phases" period. \tiny
+```{r,echo=T,message=F,out.width='75%'}
+phase=data.frame(a=biontech_phase$Close %>%
+                   append(moderna_phase$Close) %>%
+                   append(astrazeneca_phase$Close),
+                 b=biontech_phase$company %>%
+                   append(moderna_phase$company) %>%
+                   append(astrazeneca_phase$company))
+ggplot(phase, aes(x= a, y= factor(b),
+                        fill=factor(stat(quantile))))+
+  stat_density_ridges(geom="density_ridges_gradient",
+                      calc_ecdf=T, quantiles = c(0.025,0.975))+
+  ylab("Companies")+xlab("Close Price Value")+
+  scale_fill_manual(name="Probability",
+                    values=c("pink","lightblue","green"),
+                    labels=c("(0,0.025)","(0.025,0.975)","(0.975,1)"))+
+  theme_minimal()
+
+
+```
+\normalsize
+\framebreak
+The following chart indicates the distributions of each company in "authorization" period.  
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+authorization=data.frame(a=biontech_authorization$Close %>%
+                           append(moderna_authorization$Close) %>% append(astrazeneca_authorization$Close),
+                         b=biontech_authorization$company %>%
+                           append(moderna_authorization$company) %>%
+                           append(astrazeneca_authorization$company))
+ggplot(authorization, aes(x= a, y= factor(b),
+                        fill=factor(stat(quantile))))+
+  stat_density_ridges(geom="density_ridges_gradient",
+                      calc_ecdf=T, quantiles = c(0.025,0.975))+
+  ylab("Companies")+xlab("Close Price Value")+
+  scale_fill_manual(name="Probability",
+                    values=c("pink","lightblue","green"),
+                    labels=c("(0,0.025)","(0.025,0.975)","(0.975,1)"))+
+  theme_minimal()
+```
+
+\normalsize
+\framebreak The following code calculates the rate of changes in company stock prices in each period.
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+rates=data.frame(Company=
+                   c("BioNTech","BioNTech","BioNTech",
+                     "Moderna Inc.","Moderna Inc.","Moderna Inc.",
+                     "AstraZeneca","AstraZeneca","AstraZeneca"),
+                 rate_types=
+                   c("First Volunteer","Phase","Authorization",
+                     "First Volunteer","Phase","Authorization","
+                     First Volunteer","Phase","Authorization"),
+                Values=
+                   c((firstvolunteer[86,1]-firstvolunteer[1,1])/firstvolunteer[1,1]*100,
+                     (phase[57,1]-phase[1,1])/phase[1,1]*100,
+                      (authorization[271,1]-authorization[1,1])/authorization[1,1]*100,
+                     (firstvolunteer[129,1]-firstvolunteer[87,1])/firstvolunteer[87,1]*100,
+                     (phase[149,1]-phase[58,1])/phase[58,1]*100,
+                      (authorization[384,1]-authorization[272,1])/authorization[272,1]*100,
+                     (firstvolunteer[209,1]-firstvolunteer[130,1])/firstvolunteer[130,1]*100,
+                      (phase[239,1]-phase[150,1])/phase[150,1]*100 ,
+                    (authorization[468,1]-authorization[385,1])/authorization[385,1]*100))
+
+```
+\normalsize
+\framebreak
+The graph of AstraZeneca contains more fluctuations than other companies, and according to the bar chart the periods phase and authorization had slight impacts on data set. Hence it would be useful to test whether those events have affect on stock prices of AstraZeneca in statistical importance. So we need to test  
+$H_0: \mu_{First Volunteer}=\mu_{Authorization}=\mu_{Phase} \ \  H_1: \mu_{First Volunteer}\neq\mu_{Authorization}\neq\mu_{phase}$
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+
+astrazen_rate <- data.frame(
+  Y=
+    c(astrazeneca_first_volunteer$Close %>%
+        append(astrazeneca_phase$Close) %>% 
+        append(astrazeneca_authorization$Close)),
+  Period=
+    factor(rep(c("First Volunteer","Phase", "Authorization"),
+               c(length(astrazeneca_first_volunteer$Close), 
+                 length(astrazeneca_phase$Close),
+                 length(astrazeneca_authorization$Close)))))
+k=anova(lm(astrazen_rate$Y~astrazen_rate$Period))
+rownames(k) <- c("Period", "Residuals")
+k %>% kable()
+```
+\normalsize
+\framebreak It is clear that there are no statistical difference between each period of AstraZeneca, therefore we can say that phase and authorization periods has not significant effect on AstraZeneca's stock prices. Since other relations can be seen obvious we did not make ANOVA tables for them.
+
+\framebreak Finally, we can analyze final periods of each company, we compare EMA founding period of AstraZeneca with FDA period of BioNTech. The following graph shows the rate of changes of stock prices of AstraZeneca at EMA period and BioNTech at FDA period. 
+\tiny
+```{r,echo=T,message=F,out.width='75%'}
+
+p1=ggplot()+ geom_line(biontech_FDA ,mapping=aes(x=Date,y=Close))+theme_minimal()
+p2=ggplot()+geom_line(astrazeneca_EMA,mapping=aes(x=Date,y=Close))+theme_minimal()
+plot_grid(p1, p2,labels=c("BioNTech", "AstraZeneca"), ncol = 2, nrow = 1)
+```
+\normalsize
+\framebreak The result is unexpected because FDA approval should increase the stock prices of BioNTech but we can observe a significant decrease, while EMA foundings was expected to decrease stock prices of AstraZeneca it increased by approximately $25%$. This result is fundamental for stock data analysis, because a positive event might not imply an increase likewise a negative event might not imply a decrease. It is evident that AstraZeneca was not as successful as Moderna Inc. and BioNTech  companies in stock prices during the pandemic. But there need to be more economical parameters other than we tested in this project to determine the most successful company. It is clear the answer is Moderna Inc. or BioNTech, but we can not answer without knowing more economical analysis methods, but by statistical tests we can conclude that Moderna Inc. and BioNTech became very successful to increase their stock prices even though their graph shows a clear decrease in their last days of time scope of this project.
+
+# Conclusions {.allowframebreaks}
+
+During the pandemic, numerous health company started to research for develop a COVID19 vaccine, and many of them became successful. AstraZeneca, BioNTech and Moderna Inc. was three of them and they were most-known ones. So we obtained their stock price data for a time interval in pandemic via Yahoo Finance and performed statistical analyses on them and visualized our foundings and explained them. We concluded that AstraZeneca did not showed economical performance as good as BioNTech and Moderna Inc.. 
+
+# References  
+
+* [Dataset of BioNTech Stocks](https://finance.yahoo.com/quote/BNTX/)  
+* [Dataset of Moderna Inc. Stocks](https://finance.yahoo.com/quote/MRNA/)   
+* [Dataset of AstraZeneca Stocks](https://finance.yahoo.com/quote/AZN/)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
